@@ -209,7 +209,8 @@ function upload() {
   const files = (manifest.files || []).filter((file) => file.localPath || existsSync(join(DOWNLOAD_DIR, file.r2Key))).slice(0, limit || undefined);
   for (const file of files) {
     const localPath = file.localPath || join(DOWNLOAD_DIR, file.r2Key);
-    const result = spawnSync("npx", ["wrangler", "r2", "object", "put", `${bucket}/${file.r2Key}`, "--file", localPath], {
+    const target = hasFlag("local") ? [] : ["--remote"];
+    const result = spawnSync("npx", ["wrangler", "r2", "object", "put", `${bucket}/${file.r2Key}`, "--file", localPath, ...target], {
       stdio: "inherit"
     });
     if (result.status !== 0) throw new Error(`upload failed: ${file.r2Key}`);

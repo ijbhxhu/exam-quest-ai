@@ -8,6 +8,11 @@ OPENAI_OCR_MODEL = "gpt-5.4-mini"
 OPENAI_IMAGE_MODEL = "gpt-image-1-mini"
 PDF_DAILY_LIMIT = "30"
 
-# Bind these in Cloudflare Pages once resources exist:
-# D1 binding: EXAM_DB
-# R2 binding: PDF_BUCKET
+[[d1_databases]]
+binding = "EXAM_DB"
+database_name = "exam-quest-ai"
+database_id = "a3902906-a85d-4349-b750-d0f2ff357aca"
+
+[[r2_buckets]]
+binding = "PDF_BUCKET"
+bucket_name = "exam-quest-pdfs"

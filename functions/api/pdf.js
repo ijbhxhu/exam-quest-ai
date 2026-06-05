@@ -2,6 +2,17 @@ import { corsHeaders, error, handleOptions } from "../_lib/http.js";
 import { getPdfByAnyId } from "../_lib/data.js";
 import { enforceDailyDownloadLimit } from "../_lib/rateLimit.js";
 
+function r2KeyCandidates(key) {
+  const keys = [key];
+  try {
+    const decoded = decodeURIComponent(key);
+    if (decoded !== key) keys.push(decoded);
+  } catch {
+    // Keep the original key if it is not URI encoded.
+  }
+  return keys;
+}
+
 export async function onRequest(context) {
   const options = handleOptions(context.request);
   if (options) return options;
@@ -21,16 +32,19 @@ export async function onRequest(context) {
   }
 
   if (indexedPdf?.r2_key && context.env.PDF_BUCKET?.get) {
-    const object = await context.env.PDF_BUCKET.get(indexedPdf.r2_key);
-    if (!object) return error("R2 找不到這份 PDF", 404);
-    const headers = new Headers(corsHeaders);
-    headers.set("Content-Type", object.httpMetadata?.contentType || "application/pdf");
-    headers.set("Content-Disposition", `attachment; filename="${encodeURIComponent(indexedPdf.filename || name)}"`);
-    headers.set("Cache-Control", "private, max-age=0, no-store");
-    if (indexedPdf.size_bytes) headers.set("Content-Length", String(indexedPdf.size_bytes));
-    headers.set("X-Download-Limit", String(limit.limit));
-    if (limit.remaining !== null) headers.set("X-Download-Remaining", String(limit.remaining));
-    return new Response(object.body, { headers });
+    for (const key of r2KeyCandidates(indexedPdf.r2_key)) {
+      const object = await context.env.PDF_BUCKET.get(key);
+      if (!object) continue;
+      const headers = new Headers(corsHeaders);
+      headers.set("Content-Type", object.httpMetadata?.contentType || "application/pdf");
+      headers.set("Content-Disposition", `attachment; filename="${encodeURIComponent(indexedPdf.filename || name)}"`);
+      headers.set("Cache-Control", "private, max-age=0, no-store");
+      if (indexedPdf.size_bytes) headers.set("Content-Length", String(indexedPdf.size_bytes));
+      headers.set("X-Download-Limit", String(limit.limit));
+      headers.set("X-PDF-Source", "r2");
+      if (limit.remaining !== null) headers.set("X-Download-Remaining", String(limit.remaining));
+      return new Response(object.body, { headers });
+    }
   }
 
   const driveId = indexedPdf?.drive_file_id || id;
@@ -48,6 +62,7 @@ export async function onRequest(context) {
   headers.set("Content-Disposition", `attachment; filename="${encodeURIComponent(indexedPdf?.filename || name)}"`);
   headers.set("Cache-Control", "private, max-age=0, no-store");
   headers.set("X-Download-Limit", String(limit.limit));
+  headers.set("X-PDF-Source", indexedPdf?.r2_key ? "drive-fallback" : "drive");
   if (limit.remaining !== null) headers.set("X-Download-Remaining", String(limit.remaining));
   return new Response(response.body, { headers });
 }

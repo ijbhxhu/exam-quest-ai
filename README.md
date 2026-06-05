@@ -102,6 +102,8 @@ The pipeline is intentionally split into small resumable phases:
 - `upload`: uploads local PDFs to R2
 - `manifest:sql`: generates a D1 import script
 
+`mirror:upload` writes to remote R2 by default. Pass `--local` only when you intentionally want Wrangler's local R2 instance.
+
 ## Legal And Safety Notes
 
 Third-party PDF rights vary by source. This project provides code and data formats, not a grant of rights to redistribute exam papers. If you mirror PDFs, confirm that your use case is allowed.

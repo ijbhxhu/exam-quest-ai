@@ -10,6 +10,12 @@ Create one GitHub Project named:
 Exam Quest AI Roadmap
 ```
 
+Current project:
+
+```text
+https://github.com/users/ijbhxhu/projects/1
+```
+
 Suggested columns:
 
 ```text
