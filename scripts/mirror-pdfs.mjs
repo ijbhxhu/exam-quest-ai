@@ -176,7 +176,8 @@ async function audit() {
 async function download() {
   const manifest = JSON.parse(readFileSync(arg("manifest", MANIFEST_PATH), "utf8"));
   const limit = Number(arg("limit", "0"));
-  const files = (manifest.files || []).filter((file) => file.downloadUrl).slice(0, limit || undefined);
+  const offset = Number(arg("offset", "0"));
+  const files = (manifest.files || []).filter((file) => file.downloadUrl).slice(offset, limit ? offset + limit : undefined);
   await mapLimit(files, Number(arg("concurrency", "4")), async (file) => {
     const localPath = join(DOWNLOAD_DIR, file.r2Key);
     if (existsSync(localPath) && !hasFlag("force")) return { ...file, localPath };
@@ -206,7 +207,8 @@ function upload() {
   if (!bucket) throw new Error("missing --bucket=<r2-bucket-name>");
   const manifest = JSON.parse(readFileSync(arg("manifest", MANIFEST_PATH), "utf8"));
   const limit = Number(arg("limit", "0"));
-  const files = (manifest.files || []).filter((file) => file.localPath || existsSync(join(DOWNLOAD_DIR, file.r2Key))).slice(0, limit || undefined);
+  const offset = Number(arg("offset", "0"));
+  const files = (manifest.files || []).filter((file) => file.localPath || existsSync(join(DOWNLOAD_DIR, file.r2Key))).slice(offset, limit ? offset + limit : undefined);
   for (const file of files) {
     const localPath = file.localPath || join(DOWNLOAD_DIR, file.r2Key);
     const target = hasFlag("local") ? [] : ["--remote"];
@@ -229,7 +231,7 @@ else {
     "Usage:",
     "  npm run mirror:scan -- --grades=3,4",
     "  npm run mirror:audit",
-    "  npm run mirror:download -- --limit=20",
-    "  npm run mirror:upload -- --bucket=exam-quest-pdfs --limit=20"
+    "  npm run mirror:download -- --limit=20 --offset=0",
+    "  npm run mirror:upload -- --bucket=exam-quest-pdfs --limit=20 --offset=0"
   ].join("\n"));
 }

@@ -226,4 +226,63 @@ const ocrJson = await ocrResponse.json();
 assert.equal(ocrJson.mode, "cached");
 assert.equal(ocrJson.title, "快取題包");
 
+const generatedDb = new MockD1({ pdfFiles: [{ ...pdfFile, id: "pdf_generate123" }] });
+const generatedBucket = new MockR2({});
+const generatedEnv = {
+  EXAM_DB: generatedDb,
+  PDF_BUCKET: generatedBucket,
+  PDF_DAILY_LIMIT: "30",
+  DOWNLOAD_LIMIT_SALT: "test-salt",
+  OPENAI_API_KEY: "test-key",
+  OPENAI_OCR_MODEL: "test-model"
+};
+const originalFetch = globalThis.fetch;
+globalThis.fetch = async (url, init) => {
+  assert.equal(url, "https://api.openai.com/v1/responses");
+  assert.equal(init.method, "POST");
+  return new Response(JSON.stringify({
+    output_text: JSON.stringify({
+      title: "新產生題包",
+      questions: [
+        {
+          id: "q1",
+          question: "3 + 4 = ?",
+          type: "calculation",
+          choices: [],
+          answer: "7",
+          skill: "加法",
+          hintSteps: ["先從 3 開始。", "再往後數 4 個。"],
+          gamePrompt: "第一關"
+        }
+      ]
+    })
+  }), {
+    status: 200,
+    headers: { "Content-Type": "application/json" }
+  });
+};
+try {
+  const generateRequest = new Request("https://example.com/api/ocr-game", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      pdfFileId: "pdf_generate123",
+      images: ["data:image/jpeg;base64,abc"],
+      metadata: { grade: 3, subject: "數學" }
+    })
+  });
+  const generatedResponse = await ocrHandler({ request: generateRequest, env: generatedEnv });
+  assert.equal(generatedResponse.status, 200);
+  const generatedJson = await generatedResponse.json();
+  assert.equal(generatedJson.mode, "openai");
+  assert.equal(generatedJson.title, "新產生題包");
+  assert.equal(generatedBucket.puts.length, 1);
+  assert.match(generatedBucket.puts[0].key, /^question-packs\/pdf_generate123\/qp_/);
+  assert.equal(generatedDb.questionPacks.length, 1);
+  assert.equal(generatedDb.questionPacks[0].pdf_file_id, "pdf_generate123");
+  assert.equal(generatedDb.pdfFiles[0].ocr_status, "done");
+} finally {
+  globalThis.fetch = originalFetch;
+}
+
 console.log("api-flow-tests-ok");

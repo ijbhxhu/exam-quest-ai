@@ -104,6 +104,8 @@ The pipeline is intentionally split into small resumable phases:
 
 `mirror:upload` writes to remote R2 by default. Pass `--local` only when you intentionally want Wrangler's local R2 instance.
 
+For long-running mirror work, prefer the GitHub Actions workflow `Mirror PDFs`. It runs the same scan/audit/download/upload/import steps on a Linux runner and supports `grades`, `limit`, and `offset` inputs for batching.
+
 ## Legal And Safety Notes
 
 Third-party PDF rights vary by source. This project provides code and data formats, not a grant of rights to redistribute exam papers. If you mirror PDFs, confirm that your use case is allowed.

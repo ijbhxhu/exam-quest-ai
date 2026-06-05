@@ -73,6 +73,32 @@ npm run mirror:upload -- --bucket=exam-quest-pdfs --limit=20
 
 Then repeat in larger batches.
 
+## GitHub Actions Mirror Worker
+
+The repository includes a manual workflow:
+
+```text
+.github/workflows/mirror-pdfs.yml
+```
+
+Use it for long-running mirror batches instead of a single Cloudflare Worker request. It accepts:
+
+```text
+grades        Comma-separated grades, such as 1 or 1,2,3,4,5,6
+limit         Number of PDFs to download/upload in this run, 0 means all scanned files
+offset        Start offset for batching
+import_to_d1  Whether to import generated SQL into D1
+upload_to_r2  Whether to upload downloaded PDFs to R2
+```
+
+Required GitHub repository secret:
+
+```text
+CLOUDFLARE_API_TOKEN
+```
+
+The workflow does not commit `data/` or `mirror/`. It keeps manifest and import SQL as a short-retention artifact for debugging.
+
 ## Download Flow
 
 Production downloads should go through:

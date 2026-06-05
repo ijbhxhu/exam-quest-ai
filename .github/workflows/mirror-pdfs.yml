@@ -1,0 +1,88 @@
+name: Mirror PDFs
+
+on:
+  workflow_dispatch:
+    inputs:
+      grades:
+        description: "Comma-separated grades to scan, for example: 1 or 3,4 or 1,2,3,4,5,6"
+        required: true
+        default: "1"
+      limit:
+        description: "How many PDFs to download/upload in this run. Use 0 for all scanned files."
+        required: true
+        default: "20"
+      offset:
+        description: "Start offset within the scanned manifest, useful for batching."
+        required: true
+        default: "0"
+      import_to_d1:
+        description: "Import generated manifest SQL into Cloudflare D1."
+        type: boolean
+        required: true
+        default: true
+      upload_to_r2:
+        description: "Upload downloaded PDFs to Cloudflare R2."
+        type: boolean
+        required: true
+        default: true
+
+concurrency:
+  group: mirror-pdfs-${{ github.event.inputs.grades }}-${{ github.event.inputs.offset }}
+  cancel-in-progress: false
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    permissions:
+      contents: read
+
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_R2_BUCKET: exam-quest-pdfs
+      CLOUDFLARE_D1_NAME: exam-quest-ai
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify Cloudflare readiness
+        run: npm run cf:check
+
+      - name: Scan Drive folders
+        run: npm run mirror:scan -- --grades=${{ github.event.inputs.grades }} --concurrency=12
+
+      - name: Audit PDF sizes
+        run: npm run mirror:audit -- --concurrency=32
+
+      - name: Download PDF batch
+        run: npm run mirror:download -- --limit=${{ github.event.inputs.limit }} --offset=${{ github.event.inputs.offset }} --concurrency=4
+
+      - name: Upload PDF batch to R2
+        if: ${{ github.event.inputs.upload_to_r2 == 'true' }}
+        run: npm run mirror:upload -- --bucket=${{ env.CLOUDFLARE_R2_BUCKET }} --limit=${{ github.event.inputs.limit }} --offset=${{ github.event.inputs.offset }}
+
+      - name: Generate D1 import SQL
+        run: npm run manifest:sql
+
+      - name: Import manifest into D1
+        if: ${{ github.event.inputs.import_to_d1 == 'true' }}
+        run: npx wrangler d1 execute ${{ env.CLOUDFLARE_D1_NAME }} --remote --file=data/import-pdfs.sql
+
+      - name: Upload manifest summary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mirror-summary-${{ github.event.inputs.grades }}-${{ github.event.inputs.offset }}
+          path: |
+            data/pdf-manifest.json
+            data/import-pdfs.sql
+          retention-days: 7
