@@ -1,0 +1,33 @@
+{
+  "name": "exam-quest-ai",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build",
+    "preview": "vite preview --host 127.0.0.1",
+    "pages:dev": "wrangler pages dev dist",
+    "deploy": "npm run build && wrangler pages deploy dist --project-name exam-quest-ai",
+    "db:migrate:local": "wrangler d1 migrations apply exam-quest-ai --local",
+    "db:migrate:remote": "wrangler d1 migrations apply exam-quest-ai --remote",
+    "mirror:scan": "node scripts/mirror-pdfs.mjs scan",
+    "mirror:audit": "node scripts/mirror-pdfs.mjs audit",
+    "mirror:download": "node scripts/mirror-pdfs.mjs download",
+    "mirror:upload": "node scripts/mirror-pdfs.mjs upload",
+    "manifest:sql": "node scripts/manifest-to-sql.mjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "description": "Cloudflare Pages MVP for parent-friendly exam paper search and gamified OCR practice.",
+  "dependencies": {
+    "@vitejs/plugin-react": "^6.0.2",
+    "lucide-react": "^1.17.0",
+    "pdfjs-dist": "^6.0.227",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "typescript": "^6.0.3",
+    "vite": "^8.0.16",
+    "wrangler": "^4.97.0"
+  }
+}

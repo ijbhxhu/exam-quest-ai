@@ -1,0 +1,13 @@
+name = "exam-quest-ai"
+pages_build_output_dir = "dist"
+compatibility_date = "2026-06-03"
+
+[vars]
+OPENAI_REALTIME_MODEL = "gpt-realtime-2"
+OPENAI_OCR_MODEL = "gpt-5.4-mini"
+OPENAI_IMAGE_MODEL = "gpt-image-1-mini"
+PDF_DAILY_LIMIT = "30"
+
+# Bind these in Cloudflare Pages once resources exist:
+# D1 binding: EXAM_DB
+# R2 binding: PDF_BUCKET
