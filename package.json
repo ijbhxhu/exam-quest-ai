@@ -14,7 +14,9 @@
     "mirror:audit": "node scripts/mirror-pdfs.mjs audit",
     "mirror:download": "node scripts/mirror-pdfs.mjs download",
     "mirror:upload": "node scripts/mirror-pdfs.mjs upload",
-    "manifest:sql": "node scripts/manifest-to-sql.mjs"
+    "manifest:sql": "node scripts/manifest-to-sql.mjs",
+    "test:api": "node scripts/test-api-flows.mjs",
+    "cf:check": "node scripts/cloudflare-readiness.mjs"
   },
   "keywords": [],
   "author": "",

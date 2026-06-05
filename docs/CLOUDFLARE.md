@@ -9,6 +9,15 @@ npx wrangler d1 create exam-quest-ai
 npx wrangler r2 bucket create exam-quest-pdfs
 ```
 
+If wrangler reports that it is not logged in in a non-interactive shell, create or export a Cloudflare API token:
+
+```bash
+export CLOUDFLARE_API_TOKEN=...
+npm run cf:check
+```
+
+The readiness checker verifies authentication, the Pages project, D1, R2, the migration file, and whether production secrets were accidentally put in `.dev.vars`.
+
 Apply schema migrations:
 
 ```bash
